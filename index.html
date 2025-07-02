@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Blog Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar {
+            background-color: var(--bg-secondary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .markdown-preview {
+            overflow-y: auto;
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .markdown-input {
+            background-color: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .hero-canvas {
+            width: 100%;
+            height: 400px;
+            position: relative;
+        }
+        
+        .footer {
+            background-color: var(--bg-secondary);
+            margin-top: auto;
+        }
+        
+        .blog-card {
+            background-color: var(--bg-secondary);
+            transition: transform 0.3s ease;
+        }
+        
+        .blog-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .markdown-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+        
+        .markdown-preview pre {
+            background-color: #1e1e1e;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+        
+        .markdown-preview code {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.9rem;
+        }
+        
+        .markdown-preview a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        
+        .markdown-preview a:hover {
+            text-decoration: underline;
+        }
+        
+        .carousel-item {
+            min-height: 400px;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .markdown-input, .markdown-preview {
+                width: 100%;
+                min-height: 300px;
+            }
+        }
+        
+        /* Hamburger menu animation */
+        .hamburger div {
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger.active div:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        
+        .hamburger.active div:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .hamburger.active div:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar px-6 py-4 fixed w-full z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <img src="https://png.pngtree.com/png-vector/20211101/ourmid/pngtree-letter-p-logo-png-image_4011722.png" alt="Modern minimalist blog platform logo with abstract geometric shapes in purple gradient" class="h-10 w-10 rounded-full">
+                <span class="text-xl font-bold" id="logo-text">Markdown Blog</span>
+            </div>
+            
+            <div class="hidden md:flex space-x-6">
+                <a href="#features" class="hover:text-indigo-400 transition">Features</a>
+                <a href="#editor" class="hover:text-indigo-400 transition">Editor</a>
+                <a href="#blogs" class="hover:text-indigo-400 transition">Blogs</a>
+                <a href="#about" class="hover:text-indigo-400 transition">About</a>
+            </div>
+            
+            <button class="md:hidden flex flex-col justify-center items-center hamburger" id="hamburger">
+                <div class="w-6 h-0.5 bg-white my-1"></div>
+                <div class="w-6 h-0.5 bg-white my-1"></div>
+                <div class="w-6 h-0.5 bg-white my-1"></div>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden mt-4" id="mobile-menu">
+            <div class="flex flex-col space-y-3">
+                <a href="#features" class="hover:text-indigo-400 transition">Features</a>
+                <a href="#editor" class="hover:text-indigo-400 transition">Editor</a>
+                <a href="#blogs" class="hover:text-indigo-400 transition">Blogs</a>
+                <a href="#about" class="hover:text-indigo-400 transition">About</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section with Carousel -->
+     <section class="pt-24 pb-16 px-6 hero-section">
+        <div class="container mx-auto">
+            <div class="relative overflow-hidden rounded-xl shadow-2xl">
+                <div class="carousel" id="carousel">
+                    <div class="carousel-item w-full flex items-center justify-center p-12 text-center bg-gradient-to-r from-indigo-800 to-purple-800">
+                        <div>
+                            <h2 class="text-4xl md:text-5xl font-bold mb-4" id="hero-title-1">Write Beautiful Blogs</h2>
+                            <p class="text-xl mb-8" id="hero-subtitle-1">Simple Markdown editor with live preview for effortless writing</p>
+                            <button class="bg-white text-indigo-800 px-6 py-3 rounded-lg font-bold hover:bg-indigo-100 transition" id="cta-1">
+                                Start Writing
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-item w-full flex items-center justify-center p-12 text-center bg-gradient-to-r from-purple-800 to-violet-800">
+                        <div>
+                            <h2 class="text-4xl md:text-5xl font-bold mb-4" id="hero-title-2">Preview As You Type</h2>
+                            <p class="text-xl mb-8" id="hero-subtitle-2">See your formatted content in real-time</p>
+                            <button class="bg-white text-indigo-800 px-6 py-3 rounded-lg font-bold hover:bg-indigo-100 transition" id="cta-2">
+                                Try Editor
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-item w-full flex items-center justify-center p-12 text-center bg-gradient-to-r from-violet-800 to-blue-800">
+                        <div>
+                            <h2 class="text-4xl md:text-5xl font-bold mb-4" id="hero-title-3">Save & Organize</h2>
+                            <p class="text-xl mb-8" id="hero-subtitle-3">Save your drafts and published posts with ease</p>
+                            <button class="bg-white text-indigo-800 px-6 py-3 rounded-lg font-bold hover:bg-indigo-100 transition" id="cta-3">
+                                View Blogs
+                            </button>
+                        </div>
+                    </div>
+                </div> 
+                 
+                <div class="absolute bottom-6 left-0 right-0 flex justify-center space-x-2">
+                    <button class="carousel-indicator w-3 h-3 rounded-full bg-white bg-opacity-40 hover:bg-opacity-70 transition" data-index="0"></button>
+                    <button class="carousel-indicator w-3 h-3 rounded-full bg-white bg-opacity-40 hover:bg-opacity-70 transition" data-index="1"></button>
+                    <button class="carousel-indicator w-3 h-3 rounded-full bg-white bg-opacity-40 hover:bg-opacity-70 transition" data-index="2"></button>
+                </div> 
+            </div>
+        </div>
+    </section> 
+    
+    <!-- 3D Canvas Graphic -->
+    <section class="py-16 px-6">
+        <div class="container mx-auto">
+            <div class="hero-canvas rounded-xl overflow-hidden">
+                <canvas id="blog-canvas" class="w-full h-full"></canvas>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="py-16 px-6 md-0" id="features">
+        <div class="container mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center" id="features-title">Powerful Features</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-slate-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Markdown Support</h3>
+                    <p class="text-slate-300">Write with simple markdown syntax and get beautifully formatted output automatically.</p>
+                </div>
+                
+                <div class="bg-slate-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Live Preview</h3>
+                    <p class="text-slate-300">See your formatted blog post as you type with our split-screen editor.</p>
+                </div>
+                
+                <div class="bg-slate-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Save & Organize</h3>
+                    <p class="text-slate-300">Save your posts locally or to our cloud storage for easy access anytime.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Markdown Editor Section -->
+    <section class="py-16 px-6" id="editor">
+        <div class="container mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Markdown Editor</h2>
+            
+            <div class="mb-6 flex justify-center">
+                <button id="new-post-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg mr-4 transition">
+                    New Post
+                </button>
+                <button id="save-post-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
+                    Save Post
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 editor-container">
+                <div class="flex flex-col">
+                    <label for="title-input" class="mb-2">Title:</label>
+                    <input type="text" id="title-input" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your post title...">
+                    
+                    <label for="markdown-input" class="mb-2">Markdown Content:</label>
+                    <textarea id="markdown-input" class="markdown-input w-full flex-grow" placeholder="Write your blog post in markdown here..."></textarea>
+                </div>
+                
+                <div class="flex flex-col">
+                    <label class="mb-2">Preview:</label>
+                    <h3 id="title-preview" class="text-2xl font-bold mb-6">Your Blog Title</h3>
+                    <div id="markdown-preview" class="markdown-preview w-full flex-grow prose prose-invert max-w-none" style="--tw-prose-headings: white; --tw-prose-body: #e2e8f0;">
+                        Your formatted content will appear here
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Published Blogs Section -->
+    <section class="py-16 px-6" id="blogs">
+        <div class="container mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Your Saved Blogs</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="blog-list">
+                <!-- Blog cards will be populated here by JavaScript -->
+            </div>
+        </div>
+    </section>
+    
+    <!-- About Section -->
+    <section class="py-16 px-6 bg-slate-800" id="about">
+        <div class="container mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">About Markdown Blog</h2>
+            
+            <div class="max-w-3xl mx-auto text-center">
+                <p class="text-lg mb-6">
+                    Markdown Blog is a minimalist platform designed for writers who want to focus on content creation without the complexity of traditional CMS systems. 
+                </p>
+                <p class="text-lg mb-6">
+                    Built with simplicity in mind, our editor supports all standard markdown syntax and provides instant feedback. Your content is saved in your browser's local storage, or can be easily integrated with Firebase for cloud storage.
+                </p>
+                <p class="text-lg">
+                    Ready to start writing? Click the button below to jump to the editor!
+                </p>
+                
+                <div class="mt-8">
+                    <a href="#editor" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-bold transition">
+                        Go to Editor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <hr>
+    <!-- Footer -->
+    <footer class="footer py-8 px-6">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://placehold.co/40x40" alt="Modern minimalist blog platform logo with abstract geometric shapes in purple gradient" class="h-8 w-8 rounded-full">
+                        <span class="text-xl font-bold">Markdown Blog</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-6">
+                    <a href="#" class="hover:text-indigo-400 transition"></a>
+                    <a href="#" class="hover:text-indigo-400 transition"></a>
+                    <a href="#" class="hover:text-indigo-400 transition">Contact</a>
+                    <a href="#" class="hover:text-indigo-400 transition">GitHub</a>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center text-sm text-slate-400">
+                &copy; 2025 Markdown Blog. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize GSAP animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate logo text
+            gsap.from("#logo-text", {
+                duration: 0,
+                y: -50,
+                opacity: 0,
+                ease: "power2.out"
+            });
+            
+            // Animate hero text
+            gsap.to(["#hero-title-1", "#hero-subtitle-1", "#cta-1"], {
+                duration: 3,
+                y: 20,
+                opacity: 1,
+                stagger: 0.2,
+                ease: "power2.out"
+            });
+            
+            // Animate features title
+            gsap.from("#features-title", {
+                scrollTrigger: {
+                    trigger: "#features",
+                    start: "top 75%",
+                    toggleActions: "play none none none"
+                },
+                duration: 0.8,
+                opacity: 0,
+                y: 50,
+                ease: "power2.out"
+            });
+            
+            // Animate feature cards
+            gsap.from(".bg-slate-800", {
+                scrollTrigger: {
+                    trigger: "#features",
+                    start: "top 60%",
+                    toggleActions: "play none none none"
+                },
+                duration: 0.8,
+                opacity: 0,
+                y: 50,
+                stagger: 0.2,
+                ease: "power2.out"
+            });
+            
+            // Initialize 3D canvas
+            init3DCanvas();
+            
+            // Initialize carousel
+            initCarousel();
+            
+            // Setup markdown editor
+            setupMarkdownEditor();
+            
+            // Setup mobile menu toggle
+            setupMobileMenu();
+            
+            // Load saved blogs
+            loadBlogPosts();
+        });
+        
+        // 3D Canvas Animation
+        function init3DCanvas() {
+            const canvas = document.getElementById('blog-canvas');
+            if (!canvas.getContext) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            const particles = [];
+            const particleCount = 150;
+            
+            // Create particles
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 3 + 1,
+                    vx: Math.random() * 2 - 1,
+                    vy: Math.random() * 2 - 1,
+                    color: `rgba(99, 102, 241, ${Math.random() * 0.4 + 0.1})`
+                });
+            }
+            
+            // Animation loop
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update and draw particles
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    
+                    // Bounce off edges
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                    
+                    // Draw particle
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                });
+                
+                // Draw connections between close particles
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p1 = particles[i];
+                        const p2 = particles[j];
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(99, 102, 241, ${1 - distance / 100})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Draw "MD" in the center
+                ctx.font = "bold 120px Inter";
+                ctx.fillStyle = "rgba(30, 41, 59, 0.8)";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("MD", canvas.width / 2, canvas.height / 2);
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            });
+        }
+        
+        //Carousel functionality
+           function initCarousel() {
+        const carousel = document.getElementById('carousel');
+            const indicators = document.querySelectorAll('.carousel-indicator');
+            let currentIndex = 0;
+            let intervalId;
+            
+            function goToSlide(index) {
+             currentIndex = index;
+                const offset = -currentIndex * 100;
+                carousel.style.transform = `translateX(${offset}%)`;
+      
+                // Update indicators
+               indicators.forEach((indicator, i) => {
+                    indicator.classList.toggle('bg-opacity-70', i === currentIndex);
+                    indicator.classList.toggle('bg-opacity-40', i !== currentIndex);
+                });
+                
+                 // Animate new slide content
+                 const contentIds = [
+                     ["hero-title-1", "hero-subtitle-1", "cta-1"],
+                     ["hero-title-2", "hero-subtitle-2", "cta-2"],
+                     ["hero-title-3", "hero-subtitle-3", "cta-3"]
+              ];
+                
+                const currentContent = contentIds[currentIndex];
+                if (currentContent) {
+                    gsap.from(currentContent.map(id => `#${id}`), {
+                        duration: 0.8,
+                        opacity: 0,
+                        y: 20,
+                        stagger: 0.1,
+                        ease: "power2.out"
+                    });
+                }
+            }
+            
+            function nextSlide() {
+                let newIndex = currentIndex + 1;
+                if (newIndex >= document.querySelectorAll('.carousel-item').length) {
+                    newIndex = 0;
+                }
+                goToSlide(newIndex);
+            }
+            
+            // Set up auto-rotation
+            function startAutoRotation() {
+                intervalId = setInterval(nextSlide,100000000000 );
+             }
+            
+            function stopAutoRotation() {
+                clearInterval(intervalId);
+            }
+            
+            // Set up indicator buttons
+            indicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', () => {
+                    goToSlide(index);
+                    stopAutoRotation();
+                    startAutoRotation();
+                });
+            });
+            
+            // Start auto-rotation
+             startAutoRotation();
+            
+            // Pause on hover
+            carousel.addEventListener('mouseenter', stopAutoRotation);
+            carousel.addEventListener('mouseleave', startAutoRotation);
+            
+            // Initial slide
+            goToSlide(0);
+        }
+        
+        // Mobile menu toggle
+        function setupMobileMenu() {
+            const hamburger = document.getElementById('hamburger');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            hamburger.addEventListener('click', function() {
+                this.classList.toggle('active');
+                mobileMenu.classList.toggle('hidden');
+                
+                if (mobileMenu.classList.contains('hidden')) {
+                    gsap.to(mobileMenu, {
+                        height: 0,
+                        opacity: 0,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                } else {
+                    mobileMenu.style.display = 'block';
+                    gsap.from(mobileMenu, {
+                        height: 0,
+                        opacity: 0,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                }
+            });
+            
+            // Close menu when clicking on a link
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', function() {
+                    hamburger.classList.remove('active');
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+        }
+        
+        // Markdown editor functionality
+        function setupMarkdownEditor() {
+            const markdownInput = document.getElementById('markdown-input');
+            const markdownPreview = document.getElementById('markdown-preview');
+            const titleInput = document.getElementById('title-input');
+            const titlePreview = document.getElementById('title-preview');
+            
+            // Update preview on input
+            markdownInput.addEventListener('input', updatePreview);
+            titleInput.addEventListener('input', updateTitlePreview);
+            
+            // New post button
+            document.getElementById('new-post-btn').addEventListener('click', function() {
+                markdownInput.value = '';
+                titleInput.value = '';
+                updatePreview();
+                updateTitlePreview();
+            });
+            
+            // Save post button
+            document.getElementById('save-post-btn').addEventListener('click', saveBlogPost);
+            
+            function updatePreview() {
+                markdownPreview.innerHTML = marked.parse(markdownInput.value);
+            }
+            
+            function updateTitlePreview() {
+                titlePreview.textContent = titleInput.value || 'Your Blog Title';
+            }
+            
+            function saveBlogPost() {
+                const title = titleInput.value.trim();
+                const content = markdownInput.value.trim();
+                
+                if (!title || !content) {
+                    alert('Please provide both a title and content for your blog post.');
+                    return;
+                }
+                
+                // Get existing posts or initialize empty array
+                const savedPosts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
+                
+                // Add new post
+                const newPost = {
+                    id: Date.now(),
+                    title: title,
+                    content: content,
+                    date: new Date().toLocaleDateString()
+                };
+                
+                savedPosts.unshift(newPost); // Add new post to beginning of array
+                localStorage.setItem('blogPosts', JSON.stringify(savedPosts));
+                
+                // Reload blog list
+                loadBlogPosts();
+                
+                // Reset form
+                markdownInput.value = '';
+                titleInput.value = '';
+                updatePreview();
+                updateTitlePreview();
+                
+                // Show success animation
+                gsap.to("#save-post-btn", {
+                    duration: 0.3,
+                    scale: 1.2,
+                    backgroundColor: "#10b981", // Emerald green
+                    yoyo: true,
+                    repeat: 1,
+                    ease: "power2.out",
+                    onComplete: function() {
+                        gsap.to("#save-post-btn", {
+                            duration: 0.3,
+                            backgroundColor: "#16a34a" // Green 600
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Load saved blog posts
+        function loadBlogPosts() {
+            const blogList = document.getElementById('blog-list');
+            const savedPosts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
+            
+            blogList.innerHTML = '';
+            
+            if (savedPosts.length === 0) {
+                blogList.innerHTML = '<p class="text-slate-400 col-span-full text-center">No saved blog posts yet. Start writing!</p>';
+                return;
+            }
+            
+            savedPosts.forEach(post => {
+                const truncatedContent = post.content.length > 200 ? 
+                    post.content.substring(0, 200) + '...' : 
+                    post.content;
+                
+                const blogCard = document.createElement('div');
+                blogCard.className = 'blog-card p-6 rounded-xl shadow-lg';
+                blogCard.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${post.title}</h3>
+                    <p class="text-slate-400 text-sm mb-4">Posted on ${post.date}</p>
+                    <div class="prose prose-invert max-w-none mb-4" style="--tw-prose-body: #94a3b8;">
+                        ${marked.parse(truncatedContent)}
+                    </div>
+                    <button class="view-post-btn text-indigo-400 hover:text-indigo-300 transition" data-id="${post.id}">
+                        Read Full Post →
+                    </button>
+                `;
+                
+                blogList.appendChild(blogCard);
+                
+                // Add event listener to view button
+                blogCard.querySelector('.view-post-btn').addEventListener('click', function() {
+                    viewFullPost(post.id);
+                });
+            });
+            
+            // Animate blog cards in
+            gsap.from(".blog-card", {
+                scrollTrigger: {
+                    trigger: "#blogs",
+                    start: "top 75%",
+                    toggleActions: "play none none none"
+                },
+                duration: 0.6,
+                opacity: 0,
+                y: 30,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+        
+        // View full blog post
+        function viewFullPost(id) {
+            const savedPosts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
+            const post = savedPosts.find(p => p.id === id);
+            
+            if (!post) {
+                alert('Post not found!');
+                return;
+            }
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-75 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h2 class="text-2xl md:text-3xl font-bold">${post.title}</h2>
+                            <button class="close-modal text-slate-400 hover:text-white transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-6">Posted on ${post.date}</p>
+                        <div class="prose prose-invert max-w-none" style="--tw-prose-headings: white; --tw-prose-body: #e2e8f0;">
+                            ${marked.parse(post.content)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Animation for modal
+            gsap.from(modal.querySelector('div'), {
+                duration: 0.3,
+                opacity: 0,
+                y: 20,
+                ease: "power2.out"
+            });
+            
+            // Close modal
+            modal.querySelector('.close-modal').addEventListener('click', function() {
+                gsap.to(modal.querySelector('div'), {
+                    duration: 0.2,
+                    opacity: 0,
+                    y: 10,
+                    ease: "power2.in",
+                    onComplete: function() {
+                        document.body.removeChild(modal);
+                    }
+                });
+            });
+            
+            // Close when clicking outside content
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    gsap.to(modal.querySelector('div'), {
+                        duration: 0.2,
+                        opacity: 0,
+                        y: 10,
+                        ease: "power2.in",
+                        onComplete: function() {
+                            document.body.removeChild(modal);
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
