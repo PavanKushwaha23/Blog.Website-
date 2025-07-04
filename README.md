@@ -54,6 +54,8 @@ Create a responsive, user-friendly blog platform that:
 ---
 
 ## 🖼️ UI Preview
+![Screenshot 2025-07-05 002947](https://github.com/user-attachments/assets/2c4563fb-c8c8-417d-ac22-643133a90628)
+
 
 > 🔗 Visit the live demo:  
 [https://cute-praline-187bd1.netlify.app/](https://cute-praline-187bd1.netlify.app/)
